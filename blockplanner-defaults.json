@@ -7,8 +7,8 @@
     "agist": {
       "stock": { "rate": { "cattle": 15, "heifers": 14, "sheep": 2, "horses": 30 } },
       "rate": 15,
-      "pasture": 800,
-      "repairs": 500
+      "pasture": 500,
+      "repairs": 200
     },
     "beef": {
       "outlook": { "buyPrice": { "current": 5.75, "cons": 4.20 }, "sched": { "current": 9.40, "cons": 6.90 } },
