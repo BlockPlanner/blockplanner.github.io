@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "season": "2025/26",
+  "updated": "August 2026",
+  "comment": "BlockPlanner central price defaults. Host this file next to the app (or set data-defaults-url on <body> to its full URL). Edit values here to update every user's starting defaults on their next load. Numbers update a field's default; seg-link objects update the per-option defaults (e.g. what the rate becomes when a user taps 'Sheep').",
+  "values": {
+    "agist": {
+      "stock": { "rate": { "cattle": 15, "heifers": 14, "sheep": 2, "horses": 30 } },
+      "rate": 15,
+      "pasture": 800,
+      "repairs": 500
+    },
+    "beef": {
+      "outlook": { "buyPrice": { "current": 5.75, "cons": 4.20 }, "sched": { "current": 9.40, "cons": 6.90 } },
+      "buyPrice": 5.75,
+      "sched": 9.40,
+      "health": 50
+    },
+    "sheep": {
+      "outlook": { "lambPrice": { "current": 180, "cons": 135 }, "cullPrice": { "current": 110, "cons": 85 }, "wool": { "current": 10, "cons": 7 } },
+      "lambPrice": 180,
+      "cullPrice": 110,
+      "wool": 10,
+      "shear": 5.5,
+      "health": 12
+    },
+    "eggs": {
+      "breed": { "eggsYr": { "hybrid": 300, "heritage": 180 }, "pullet": { "hybrid": 42, "heritage": 50 } },
+      "price": 9,
+      "feedBag": 33,
+      "pullet": 42
+    },
+    "bees": {
+      "market": { "price": { "bulk": 7, "retail": 24 } },
+      "price": 7,
+      "consum": 110,
+      "nuc": 330
+    },
+    "garden": {
+      "revM2": 35,
+      "stall": 40
+    },
+    "hay": {
+      "type": { "price": { "grass": 12, "lucerne": 18 } },
+      "price": 12,
+      "contract": 7
+    },
+    "wood": {
+      "species": { "price": { "pine": 100, "mac": 115, "gum": 145, "omp": 145 } },
+      "price": 100,
+      "splitter": 270
+    }
+  }
+}

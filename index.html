@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en-NZ">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>BlockPlanner — NZ Lifestyle Block Profit Planner</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-1: #fcfcfb; --page: #f9f9f7;
+    --ink-1: #0b0b0b; --ink-2: #52514e; --ink-3: #898781;
+    --hairline: #e1e0d9; --border: rgba(11,11,11,0.10);
+    --accent: #3e8e22; --cost: #8a4f1d;
+    --good-text: #006300;
+    --warn-bg: #fdf3e0; --warn-ink: #7a4a00;
+    --tile: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --surface-1: #1a1a19; --page: #0d0d0d;
+      --ink-1: #ffffff; --ink-2: #c3c2b7; --ink-3: #898781;
+      --hairline: #2c2c2a; --border: rgba(255,255,255,0.10);
+      --accent: #4aa32c; --cost: #8a4f1d;
+      --good-text: #0ca30c;
+      --warn-bg: #33270f; --warn-ink: #f0c987;
+      --tile: #222220;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--page); color: var(--ink-1);
+    -webkit-font-smoothing: antialiased; padding-bottom: 40px;
+  }
+  body.has-bar { padding-bottom: 88px; }
+  .wrap { max-width: 480px; margin: 0 auto; padding: 0 16px; }
+
+  .brandbar {
+    background: #1a1a19; padding: 14px 16px;
+    display: flex; align-items: center; gap: 11px;
+  }
+  .brandbar .inner { max-width: 480px; margin: 0 auto; display: flex; align-items: center; gap: 11px; width: 100%; }
+  .brandbar svg { flex: none; border-radius: 9px; }
+  .brand-name { font-size: 19px; font-weight: 700; letter-spacing: -0.02em; color: #fff; line-height: 1.15; }
+  .brand-name .b { color: #b07a45; }
+  .brand-name .p { color: #5cae3e; }
+  .brand-sub { font-size: 11px; color: #c3c2b7; margin-top: 1px; }
+
+  .stamp {
+    font-size: 11px; color: var(--ink-3); text-align: center; padding: 10px 0 0;
+  }
+  .stamp .dot { display:inline-block; width:7px; height:7px; border-radius:50%; background: var(--accent); margin-right: 5px; vertical-align: 1px; }
+
+  /* home */
+  .home-title { font-size: 22px; font-weight: 700; margin: 18px 0 4px; }
+  .home-sub { font-size: 14px; color: var(--ink-2); margin-bottom: 18px; line-height: 1.45; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .calc-card {
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 14px; padding: 14px 12px; cursor: pointer;
+    display: flex; flex-direction: column; gap: 6px; min-height: 104px;
+    text-align: left; font: inherit; color: inherit;
+  }
+  .calc-card:active { transform: scale(0.98); }
+  .calc-card .em { font-size: 24px; line-height: 1; }
+  .calc-card .nm { font-size: 14px; font-weight: 650; line-height: 1.25; }
+  .calc-card .ds { font-size: 11.5px; color: var(--ink-3); line-height: 1.35; }
+  .soon { opacity: 0.55; }
+  .soon .tag {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+    color: var(--ink-3); border: 1px solid var(--border); border-radius: 5px;
+    padding: 2px 6px; align-self: flex-start;
+  }
+  .section-label { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); margin: 22px 0 10px; }
+
+  /* calc page */
+  .back {
+    display: inline-flex; align-items: center; gap: 6px;
+    font: inherit; font-size: 14px; font-weight: 600; color: var(--accent);
+    background: none; border: none; cursor: pointer; padding: 14px 0 2px;
+  }
+  h1.calc-title { font-size: 23px; font-weight: 700; letter-spacing: -0.01em; margin-top: 2px; }
+  .calc-desc { font-size: 13.5px; color: var(--ink-2); margin: 6px 0 16px; line-height: 1.45; }
+
+  .card {
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 14px; padding: 18px 16px; margin-bottom: 16px;
+  }
+  .field { margin-bottom: 16px; }
+  .field:last-child { margin-bottom: 0; }
+  .field > label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+  .hint { font-size: 12px; color: var(--ink-3); margin-top: 4px; line-height: 1.4; }
+
+  .seg { display: grid; gap: 6px; }
+  .seg.c2 { grid-template-columns: 1fr 1fr; }
+  .seg.c3 { grid-template-columns: repeat(3, 1fr); }
+  .seg.c4 { grid-template-columns: repeat(4, 1fr); }
+  .seg button {
+    font: inherit; font-size: 13px; font-weight: 600; padding: 10px 4px;
+    border-radius: 10px; border: 1px solid var(--border);
+    background: var(--tile); color: var(--ink-2); cursor: pointer; min-height: 44px;
+  }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: #fff; border-color: transparent; }
+
+  .stepper { display: grid; grid-template-columns: 52px 1fr 52px; gap: 8px; }
+  .stepper button {
+    font-size: 22px; font-weight: 600; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--tile);
+    color: var(--ink-1); cursor: pointer; min-height: 48px;
+  }
+  .stepper input { text-align: center; }
+  input[type=number] {
+    font: inherit; font-size: 18px; font-weight: 600;
+    min-height: 48px; width: 100%;
+    border: 1px solid var(--border); border-radius: 10px;
+    background: var(--tile); color: var(--ink-1);
+  }
+  .money { position: relative; }
+  .money input { text-align: left; padding: 0 66px 0 30px; }
+  .money.noprefix input { padding-left: 12px; }
+  .money .unit, .money .dollar {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    font-size: 13px; color: var(--ink-3); pointer-events: none;
+  }
+  .money .unit { right: 12px; }
+  .money .dollar { left: 12px; font-size: 15px; }
+
+  button, input { touch-action: manipulation; }
+
+  .results {
+    position: sticky; bottom: 0; z-index: 5; margin: 0 -4px;
+  }
+  .results .inner2 { max-width: 480px; margin: 0 auto; }
+  .sumbar {
+    width: 100%; display: flex; align-items: center; gap: 10px;
+    font: inherit; text-align: left; cursor: pointer;
+    background: var(--surface-1); color: var(--ink-1);
+    border: 1px solid var(--border);
+    border-radius: 14px 14px 0 0; padding: 12px 16px;
+    box-shadow: 0 -6px 24px rgba(0,0,0,0.10); min-height: 56px;
+  }
+  .sumbar .s-label { font-size: 12px; color: var(--ink-2); flex: 1; line-height: 1.3; }
+  .sumbar .s-value { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; }
+  .sumbar .s-value small { font-size: 12px; font-weight: 500; color: var(--ink-2); }
+  .sumbar .s-warn { font-size: 15px; display: none; }
+  .sumbar .s-warn.show { display: inline; }
+  .sumbar .chev { color: var(--ink-3); font-size: 13px; transition: transform 0.2s; }
+  .results.open .chev { transform: rotate(180deg); }
+  .sheet {
+    display: none;
+    background: var(--surface-1);
+    border: 1px solid var(--border); border-top: 1px solid var(--hairline); border-bottom: none;
+    padding: 16px 16px 20px;
+  }
+  .results.open .sheet { display: block; }
+  .hero-label { font-size: 13px; color: var(--ink-2); }
+  .hero { font-size: 38px; font-weight: 650; letter-spacing: -0.02em; margin: 2px 0; }
+  .hero small { font-size: 15px; font-weight: 500; color: var(--ink-2); letter-spacing: 0; }
+  .tiles { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .tile { background: var(--tile); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
+  .tile .t-label { font-size: 11px; color: var(--ink-3); line-height: 1.3; }
+  .tile .t-value { font-size: 16px; font-weight: 650; margin-top: 3px; }
+
+  .bar-wrap { margin-top: 14px; }
+  .bar-title { font-size: 12px; color: var(--ink-3); margin-bottom: 6px; }
+  .bar { display: flex; height: 20px; border-radius: 4px; overflow: hidden; background: var(--hairline); }
+  .bar .seg-income { background: var(--accent); border-radius: 4px 0 0 4px; }
+  .bar .gap { width: 2px; background: var(--surface-1); flex: none; }
+  .bar .seg-cost { background: var(--cost); border-radius: 0 4px 4px 0; }
+  .bar-legend { display: flex; gap: 16px; margin-top: 8px; font-size: 12px; color: var(--ink-2); }
+  .bar-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .swatch { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+  .note {
+    background: var(--warn-bg); color: var(--warn-ink);
+    border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.45;
+    margin-top: 12px; display: none;
+  }
+  .note.show { display: block; }
+
+  .fineprint { font-size: 11px; color: var(--ink-3); line-height: 1.5; margin: 20px 0 8px; text-align: center; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body data-defaults-url="blockplanner-defaults.json">
+
+<div class="brandbar"><div class="inner">
+  <svg width="38" height="38" viewBox="0 0 96 96" aria-hidden="true">
+    <defs><clipPath id="bpmark"><rect width="96" height="96" rx="22"/></clipPath></defs>
+    <g clip-path="url(#bpmark)">
+      <rect width="96" height="96" fill="#3e8e22"/>
+      <rect x="0" y="0" width="54" height="42" fill="#5cae3e"/>
+      <rect x="58" y="0" width="38" height="42" fill="#3e8e22"/>
+      <rect x="0" y="46" width="34" height="50" fill="#82c465"/>
+      <rect x="38" y="46" width="58" height="50" fill="#8a4f1d"/>
+      <rect x="54" y="0" width="4" height="42" fill="#f9f9f7"/>
+      <rect x="0" y="42" width="96" height="4" fill="#f9f9f7"/>
+      <rect x="34" y="46" width="4" height="50" fill="#f9f9f7"/>
+    </g>
+  </svg>
+  <div>
+    <div class="brand-name"><span class="b">Block</span><span class="p">Planner</span></div>
+    <div class="brand-sub">The NZ Lifestyle Block Profit Planner</div>
+  </div>
+</div></div>
+
+<div class="wrap">
+  <div class="stamp" id="stamp"><span class="dot"></span>Prices: 2025/26 season — built-in defaults</div>
+
+  <!-- HOME -->
+  <div id="home">
+    <div class="home-title">What could your block earn?</div>
+    <p class="home-sub">Pick an enterprise, key in your numbers, and see what it's realistically worth — before you spend a cent. Defaults are researched NZ figures; replace them with your local rates.</p>
+    <div class="grid" id="calcGrid"></div>
+    <div class="section-label">Coming later</div>
+    <div class="grid">
+      <div class="calc-card soon"><span class="em">🥛</span><span class="nm">Raw milk</span><span class="tag">Advanced guide</span></div>
+      <div class="calc-card soon"><span class="em">🏡</span><span class="nm">Farm-stay</span><span class="tag">Advanced guide</span></div>
+    </div>
+    <p class="fineprint">Indicative estimates only — actual prices, yields and costs vary by region, season and property. 2025-26 livestock prices are historically high: use the Conservative setting for planning. Not financial advice.</p>
+  </div>
+
+  <!-- CALC PAGE -->
+  <div id="calcPage" class="hidden">
+    <button class="back" id="backBtn">← All calculators</button>
+    <h1 class="calc-title" id="calcTitle"></h1>
+    <p class="calc-desc" id="calcDesc"></p>
+    <div id="calcFields"></div>
+    <p class="fineprint" id="calcFine"></p>
+    <div class="results" id="results">
+      <div class="inner2">
+        <button class="sumbar" id="sumBar" aria-expanded="false">
+          <span class="s-label" id="sumLabel">Estimated net income</span>
+          <span class="s-warn" id="sumWarn">⚠️</span>
+          <span class="s-value" id="sumValue">$0 <small>/yr</small></span>
+          <span class="chev">▲</span>
+        </button>
+        <div class="sheet">
+          <div class="hero-label" id="heroLabel">Estimated net income</div>
+          <div class="hero" id="hero">$0 <small>/year</small></div>
+          <div class="tiles" id="tiles"></div>
+          <div class="bar-wrap">
+            <div class="bar-title">Where the gross goes</div>
+            <div class="bar" aria-hidden="true">
+              <div class="seg-income" id="barNet"></div>
+              <div class="gap"></div>
+              <div class="seg-cost" id="barCost"></div>
+            </div>
+            <div class="bar-legend">
+              <span><span class="swatch" style="background:var(--accent)"></span>Net to you</span>
+              <span><span class="swatch" style="background:var(--cost)"></span>Costs</span>
+            </div>
+          </div>
+          <div class="note" id="calcNote"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+const fmt = n => (n < 0 ? "−$" : "$") + Math.round(Math.abs(n)).toLocaleString("en-NZ");
+const num = v => { const n = parseFloat(v); return isFinite(n) ? n : 0; };
+
+/* ============ CALCULATOR DEFINITIONS ============ */
+/* Field types:
+   seg   {t:'seg', id, label, cols, opts:[{k,label}], link:{fieldId:{optKey:value}}, hint}
+   step  {t:'step', id, label, def, min, max, step}
+   money {t:'money', id, label, def, prefix, unit, step, hint}
+   range {t:'range', id, label, def, min, max, step, hint}
+*/
+const CALCS = [
+{
+  id:"agist", em:"🐄", name:"Agistment", short:"Lease your paddocks to someone else's stock",
+  desc:"You supply grass and water; someone else supplies the stock and the work. Use a written grazing agreement and check your insurance covers agisted stock.",
+  fine:"Rates are informal and vary by district — check local listings. Get a written agreement covering stocking rate, liability and who fixes fences.",
+  fields:[
+    {t:'seg', id:'stock', label:'Stock type', cols:'c4', opts:[{k:'cattle',label:'Cattle'},{k:'heifers',label:'Heifers'},{k:'sheep',label:'Sheep'},{k:'horses',label:'Horses'}],
+      link:{rate:{cattle:15,heifers:14,sheep:2,horses:30}}},
+    {t:'step', id:'head', label:'Number of head', def:6, min:1, max:500, step:1},
+    {t:'money', id:'rate', label:'Rate per head, per week', def:15, prefix:'$', unit:'/head/wk', step:0.5,
+      hint:'Indicative 2025-26: adult cattle $10–25, dairy heifers $10–18, sheep $1–3.50, horses $20–45. Check your district.'},
+    {t:'range', id:'weeks', label:'Weeks grazed per year', def:52, min:4, max:52, step:1},
+    {t:'money', id:'ha', label:'Grazeable area', def:4, unit:'ha', step:0.5},
+    {t:'money', id:'pasture', label:'Pasture & fertiliser per year', def:800, prefix:'$', unit:'/yr', step:50},
+    {t:'money', id:'repairs', label:'Fencing, water & repairs per year', def:500, prefix:'$', unit:'/yr', step:50},
+    {t:'money', id:'other', label:'Other costs per year', def:300, prefix:'$', unit:'/yr', step:50},
+    {t:'range', id:'hours', label:'Your time — hours per week', def:2, min:0, max:15, step:0.5,
+      hint:'Checking stock, water, fences. Agistment is low-effort, not no-effort.'}
+  ],
+  compute(v, seg){
+    const cap = {cattle:2.0, heifers:3.5, sheep:12, horses:1.5}[seg.stock];
+    const label = {cattle:'adult cattle', heifers:'heifers', sheep:'sheep', horses:'horses'}[seg.stock];
+    const gross = v.head * v.rate * v.weeks;
+    const costs = v.pasture + v.repairs + v.other;
+    const net = gross - costs;
+    const yearHrs = v.hours * v.weeks;
+    let note = "";
+    if (v.ha > 0 && v.head / v.ha > cap)
+      note = `Heads up: ${v.head} ${label} on ${v.ha} ha is above typical carrying capacity (~${cap}/ha on good pasture). You may need supplementary feed, or fewer head.`;
+    else if (net < 0) note = "Costs currently exceed income — try more head, a higher rate, or trimming annual costs.";
+    return { hero:net, unit:'/year', gross, costs, note, tiles:[
+      {label:'Gross income', value:fmt(gross)},
+      {label:'Net per hectare', value: v.ha>0 ? fmt(net/v.ha) : '—'},
+      {label:'Per hour of your time', value: yearHrs>0 ? fmt(net/yearHrs) : '—'}
+    ]};
+  }
+},
+{
+  id:"beef", em:"🐂", name:"Beef finishing", short:"Buy store cattle, grow them out, sell prime",
+  desc:"Buy store cattle, grow them on your pasture, sell finished. Margins depend on the buy-sell spread and your pasture. 2025-26 prices are historically high — plan on Conservative.",
+  fine:"Store and schedule prices are cyclical and currently near record highs. The Conservative setting reflects longer-run averages. Prices: AgriHQ March 2026.",
+  fields:[
+    {t:'seg', id:'outlook', label:'Price outlook', cols:'c2', opts:[{k:'current',label:'Current (high)'},{k:'cons',label:'Conservative'}],
+      link:{buyPrice:{current:5.75,cons:4.20}, sched:{current:9.40,cons:6.90}},
+      hint:'Conservative ≈ 27% below the current record schedule — closer to the long-run average.'},
+    {t:'step', id:'head', label:'Number of head (mob)', def:4, min:1, max:200, step:1},
+    {t:'money', id:'buyWt', label:'Buy weight (liveweight)', def:450, unit:'kg LW', step:10, hint:'R2 steer ≈ 450–470 kg; R1/weaner ≈ 270 kg.'},
+    {t:'money', id:'buyPrice', label:'Buy price', def:5.75, prefix:'$', unit:'/kg LW', step:0.05},
+    {t:'range', id:'days', label:'Days on your block', def:250, min:100, max:365, step:5},
+    {t:'money', id:'gain', label:'Liveweight gain per day', def:0.7, unit:'kg/day', step:0.05, hint:'0.4 winter – 1.1 spring on good pasture.'},
+    {t:'money', id:'sched', label:'Sale schedule (carcass weight)', def:9.40, prefix:'$', unit:'/kg CW', step:0.05},
+    {t:'money', id:'dress', label:'Dressing out', def:52, unit:'%', step:1, hint:'Carcass as % of liveweight. Steers 48–56%.'},
+    {t:'money', id:'health', label:'Animal health & misc per head, per year', def:50, prefix:'$', unit:'/hd/yr', step:5},
+    {t:'money', id:'other', label:'Other costs (cartage, yard fees)', def:300, prefix:'$', unit:'/mob', step:50},
+    {t:'money', id:'ha', label:'Grazing area', def:6, unit:'ha', step:0.5},
+    {t:'range', id:'hours', label:'Your time — hours per week', def:3, min:0, max:15, step:0.5}
+  ],
+  compute(v){
+    const buyCost = v.head * v.buyWt * v.buyPrice;
+    const sellWt = v.buyWt + v.gain * v.days;
+    const cw = sellWt * v.dress / 100;
+    const revenue = v.head * cw * v.sched;
+    const health = v.head * v.health * (v.days / 365);
+    const costs = buyCost + health + v.other;
+    const net = revenue - costs;
+    const yearHrs = v.hours * (v.days / 7);
+    let note = "";
+    if (v.ha > 0 && v.head / v.ha > 2.0)
+      note = `Heads up: ${v.head} cattle on ${v.ha} ha is above typical carrying capacity (~2/ha). You may need supplementary feed.`;
+    else if (net < 0) note = "This trade loses money at these numbers — check the buy-sell spread and days on farm.";
+    return { hero:net, unit:'/mob', heroLabel:'Estimated net margin (this mob)', gross:revenue, costs, note, tiles:[
+      {label:'Sale revenue', value:fmt(revenue)},
+      {label:'Margin per head', value: v.head>0 ? fmt(net/v.head) : '—'},
+      {label:'Per hour of your time', value: yearHrs>0 ? fmt(net/yearHrs) : '—'}
+    ]};
+  }
+},
+{
+  id:"sheep", em:"🐑", name:"Sheep breeding", short:"A ewe flock selling store or prime lambs",
+  desc:"A breeding ewe flock selling lambs each season. Lower capital per head than cattle, more hands-on through lambing. Strong wool is roughly breakeven after shearing.",
+  fine:"Lamb prices are at historic highs (2025-26). Lambing % assumes lambs weaned per ewe mated — small flocks vary widely. Prices: AgriHQ/B+LNZ 2025-26.",
+  fields:[
+    {t:'seg', id:'outlook', label:'Price outlook', cols:'c2', opts:[{k:'current',label:'Current (high)'},{k:'cons',label:'Conservative'}],
+      link:{lambPrice:{current:180,cons:135}, cullPrice:{current:110,cons:85}, wool:{current:10,cons:7}}},
+    {t:'step', id:'ewes', label:'Breeding ewes', def:20, min:2, max:500, step:1},
+    {t:'money', id:'lambing', label:'Lambing (lambs weaned per 100 ewes)', def:130, unit:'%', step:5, hint:'National average 131%. Small flocks range 100–160%.'},
+    {t:'money', id:'lambPrice', label:'Lamb sale price', def:180, prefix:'$', unit:'/head', step:5, hint:'Store ≈ $170 (32 kg LW), prime ≈ $195 (18 kg CW), 2025-26.'},
+    {t:'money', id:'repl', label:'Replacements kept (ewe lambs)', def:22, unit:'%', step:1, hint:'Kept to replace aging ewes — these aren’t sold as lambs; the same % of old ewes sell as culls.'},
+    {t:'money', id:'cullPrice', label:'Cull ewe price', def:110, prefix:'$', unit:'/head', step:5},
+    {t:'money', id:'wool', label:'Wool income per ewe (gross)', def:10, prefix:'$', unit:'/ewe/yr', step:1, hint:'Strong wool ≈ 3.5 kg greasy at $2.80–3.00/kg — a decade high, was far lower 2020–23.'},
+    {t:'money', id:'shear', label:'Shearing per ewe', def:5.50, prefix:'$', unit:'/ewe/yr', step:0.5},
+    {t:'money', id:'health', label:'Animal health per ewe', def:12, prefix:'$', unit:'/ewe/yr', step:1},
+    {t:'money', id:'other', label:'Other costs (ram, cartage)', def:200, prefix:'$', unit:'/yr', step:50},
+    {t:'money', id:'ha', label:'Grazing area', def:3, unit:'ha', step:0.5},
+    {t:'range', id:'hours', label:'Your time — hours per week', def:3, min:0, max:20, step:0.5}
+  ],
+  compute(v){
+    const lambs = v.ewes * v.lambing / 100;
+    const kept = Math.min(lambs, v.ewes * v.repl / 100);
+    const sold = Math.max(0, lambs - kept);
+    const lambRev = sold * v.lambPrice;
+    const cullRev = kept * v.cullPrice;
+    const woolRev = v.ewes * v.wool;
+    const gross = lambRev + cullRev + woolRev;
+    const costs = v.ewes * (v.shear + v.health) + v.other;
+    const net = gross - costs;
+    const yearHrs = v.hours * 52;
+    let note = "";
+    if (v.ha > 0 && v.ewes / v.ha > 14)
+      note = `Heads up: ${v.ewes} ewes on ${v.ha} ha is above typical carrying capacity (~10–14 ewes/ha with lambs at foot).`;
+    else if (net < 0) note = "Costs exceed income at these numbers — check lambing % and prices.";
+    return { hero:net, unit:'/year', gross, costs, note, tiles:[
+      {label:'Gross income', value:fmt(gross)},
+      {label:'Net per ewe', value: v.ewes>0 ? fmt(net/v.ewes) : '—'},
+      {label:'Per hour of your time', value: yearHrs>0 ? fmt(net/yearHrs) : '—'}
+    ]};
+  }
+},
+{
+  id:"eggs", em:"🥚", name:"Eggs", short:"Free-range eggs, sold direct from the gate",
+  desc:"Sell direct to consumers (gate, market, delivery) and keep the whole flock under 100 birds — no MPI registration needed. One of the most reliable small earners on any block.",
+  fine:"Direct-to-consumer sales only under the 100-bird exemption — selling through a shop or café requires MPI registration. All birds on the property count toward 100.",
+  fields:[
+    {t:'seg', id:'breed', label:'Layer type', cols:'c2', opts:[{k:'hybrid',label:'Hybrid (Shaver)'},{k:'heritage',label:'Heritage'}],
+      link:{eggsYr:{hybrid:300,heritage:180}, pullet:{hybrid:42,heritage:50}},
+      hint:'Hybrids lay more but for fewer years (≈2.5 vs 3.5).'},
+    {t:'step', id:'hens', label:'Laying hens', def:12, min:1, max:300, step:1},
+    {t:'money', id:'eggsYr', label:'Eggs per hen, per year', def:300, unit:'eggs', step:10},
+    {t:'money', id:'price', label:'Price per dozen', def:9, prefix:'$', unit:'/dozen', step:0.5, hint:'Farm gate ≈ $9, farmers market ≈ $11 (2025).'},
+    {t:'money', id:'home', label:'Dozens kept for your own kitchen, per week', def:2, unit:'doz/wk', step:1},
+    {t:'money', id:'feedKg', label:'Feed per hen, per week', def:0.9, unit:'kg', step:0.1, hint:'≈125 g/day; less with good foraging.'},
+    {t:'money', id:'feedBag', label:'Layer feed per 20 kg bag', def:33, prefix:'$', unit:'/bag', step:1},
+    {t:'money', id:'otherHen', label:'Other costs per hen (grit, bedding, health)', def:10, prefix:'$', unit:'/hen/yr', step:1},
+    {t:'money', id:'pullet', label:'Point-of-lay pullet cost', def:42, prefix:'$', unit:'/bird', step:1},
+    {t:'range', id:'hours', label:'Your time — hours per week', def:3, min:0, max:15, step:0.5}
+  ],
+  compute(v, seg){
+    const lifespan = seg.breed === 'heritage' ? 3.5 : 2.5;
+    const dozens = v.hens * v.eggsYr / 12;
+    const sellable = Math.max(0, dozens - v.home * 52);
+    const gross = sellable * v.price;
+    const feed = v.hens * v.feedKg * 52 * (v.feedBag / 20);
+    const repl = (v.hens / lifespan) * v.pullet;
+    const costs = feed + repl + v.hens * v.otherHen;
+    const net = gross - costs;
+    const yearHrs = v.hours * 52;
+    let note = "";
+    if (v.hens > 100)
+      note = "Over 100 birds on the property means the MPI direct-sale exemption no longer applies — you'd need a registered Risk Management Programme.";
+    else if (net < 0) note = "Costs exceed income — feed is the big lever. More foraging, or a higher price per dozen.";
+    return { hero:net, unit:'/year', gross, costs, note, tiles:[
+      {label:'Dozens sold per year', value:Math.round(sellable).toLocaleString()},
+      {label:'Net per hen', value: v.hens>0 ? fmt(net/v.hens) : '—'},
+      {label:'Per hour of your time', value: yearHrs>0 ? fmt(net/yearHrs) : '—'}
+    ]};
+  }
+},
+{
+  id:"bees", em:"🐝", name:"Beekeeping", short:"Honey from a few hives — bulk or retail",
+  desc:"Even a handful of hives can earn a real side income — the margin lives in how you sell (bulk to a packer vs jars at the market) and staying on top of varroa.",
+  fine:"Hive registration with the AFB Management Agency is compulsory (levy included below). Yields vary hugely with site and season. Prices: NZ suppliers & industry 2025-26.",
+  fields:[
+    {t:'seg', id:'market', label:'How you sell', cols:'c2', opts:[{k:'bulk',label:'Bulk to packer'},{k:'retail',label:'Retail jars'}],
+      link:{price:{bulk:7,retail:24}},
+      hint:'Retail ≈ $14/500 g jar less jar, label & market costs ≈ $24/kg net. Bulk clover ≈ $4–9/kg.'},
+    {t:'step', id:'hives', label:'Hives', def:4, min:1, max:100, step:1},
+    {t:'money', id:'yield', label:'Honey yield per hive', def:25, unit:'kg/yr', step:1, hint:'Pastoral/clover 15–40 kg. Manuka similar volume, much higher $/kg.'},
+    {t:'money', id:'price', label:'Sale price', def:7, prefix:'$', unit:'/kg', step:0.5},
+    {t:'money', id:'consum', label:'Consumables per hive (varroa, sugar, frames)', def:110, prefix:'$', unit:'/hive/yr', step:10},
+    {t:'money', id:'equip', label:'Equipment & setup, annualised', def:150, prefix:'$', unit:'/yr', step:25, hint:'New hive ≈ $345 + nuc $330 + gear ≈ $850, spread over its life.'},
+    {t:'money', id:'lossPct', label:'Colony losses per year', def:11, unit:'%', step:1, hint:'NZ average ≈ 11%; mistimed varroa treatment is the main cause.'},
+    {t:'money', id:'nuc', label:'Replacement nuc cost', def:330, prefix:'$', unit:'/colony', step:10},
+    {t:'range', id:'hours', label:'Your time — hours per week (average)', def:2, min:0, max:10, step:0.5}
+  ],
+  compute(v){
+    const honey = v.hives * v.yield;
+    const gross = honey * v.price;
+    const levy = 42.24 + 2.24 * v.hives;
+    const losses = v.hives * (v.lossPct / 100) * v.nuc;
+    const costs = v.hives * v.consum + levy + losses + v.equip;
+    const net = gross - costs;
+    const yearHrs = v.hours * 52;
+    let note = "";
+    if (net < 0) note = "Losing money at these numbers — bulk clover prices barely cover costs at small scale; retail jars or more hives change the picture.";
+    return { hero:net, unit:'/year', gross, costs, note, tiles:[
+      {label:'Honey per year', value:Math.round(honey).toLocaleString() + ' kg'},
+      {label:'Net per hive', value: v.hives>0 ? fmt(net/v.hives) : '—'},
+      {label:'Per hour of your time', value: yearHrs>0 ? fmt(net/yearHrs) : '—'}
+    ]};
+  }
+},
+{
+  id:"garden", em:"🥬", name:"Market garden", short:"Intensive veg for boxes or the farmers market",
+  desc:"A quarter to half hectare of intensive beds can supply a veg-box round or market stall. Low capital, high labour — the honest question is the per-hour number.",
+  fine:"Revenue per m² varies more than any other figure in BlockPlanner — top NZ operators gross $50–85 per m² but took years to get there. Start conservative.",
+  fields:[
+    {t:'money', id:'area', label:'Growing area', def:1000, unit:'m²', step:100, hint:'1,000 m² = a quarter acre, a serious part-time garden.'},
+    {t:'money', id:'revM2', label:'Gross revenue per m², per year', def:35, prefix:'$', unit:'/m²/yr', step:5, hint:'Realistic range $20–50 established; top NZ operators $50–85. Year one will be lower.'},
+    {t:'money', id:'consumPct', label:'Seeds, compost & consumables', def:15, unit:'% of revenue', step:1},
+    {t:'money', id:'markets', label:'Markets attended per year', def:40, unit:'/yr', step:1},
+    {t:'money', id:'stall', label:'Stall fee per market', def:40, prefix:'$', unit:'/market', step:5},
+    {t:'money', id:'other', label:'Other costs (packaging, insurance)', def:1500, prefix:'$', unit:'/yr', step:100},
+    {t:'range', id:'hours', label:'Your time — hours per week in season', def:30, min:0, max:70, step:1}
+  ],
+  compute(v){
+    const gross = v.area * v.revM2;
+    const consum = gross * v.consumPct / 100;
+    const costs = consum + v.markets * v.stall + v.other;
+    const net = gross - costs;
+    const yearHrs = v.hours * 46;
+    let note = "";
+    if (v.revM2 > 60) note = "Over $60/m² is top-decile territory — very achievable numbers to aspire to, but don't bank on them in the first seasons.";
+    else if (net < 0) note = "Costs exceed income — stall fees and consumables bite at small scale. Bigger area or a veg-box round (no stall fee) helps.";
+    return { hero:net, unit:'/year', gross, costs, note, tiles:[
+      {label:'Gross revenue', value:fmt(gross)},
+      {label:'Net per 100 m²', value: v.area>0 ? fmt(net/(v.area/100)) : '—'},
+      {label:'Per hour of your time', value: yearHrs>0 ? fmt(net/yearHrs) : '—'}
+    ]};
+  }
+},
+{
+  id:"hay", em:"🌾", name:"Lucerne & hay", short:"Bale your surplus grass and sell it",
+  desc:"If you have open pasture, selling hay to horse owners and other blocks is simple and mechanised — contractors do the heavy work, you make the margin.",
+  fine:"No published NZ hay price index exists — the real market is TradeMe and Facebook listings. Lucerne needs establishment ($900–1,900/ha) but yields 3× grass over a 7-year stand.",
+  fields:[
+    {t:'seg', id:'type', label:'Crop', cols:'c2', opts:[{k:'grass',label:'Grass hay'},{k:'lucerne',label:'Lucerne'}],
+      link:{balesHa:{grass:200,lucerne:600}, price:{grass:12,lucerne:18}, estab:{grass:0,lucerne:200}},
+      hint:'Lucerne: more cuts, higher price, but needs establishment and the right soil.'},
+    {t:'money', id:'ha', label:'Area in hay', def:3, unit:'ha', step:0.5},
+    {t:'money', id:'balesHa', label:'Small square bales per ha, per year', def:200, unit:'bales', step:10, hint:'Grass ≈ 150–250 (one cut); lucerne ≈ 400–800 (3–6 cuts).'},
+    {t:'money', id:'price', label:'Sale price per bale', def:12, prefix:'$', unit:'/bale', step:0.5, hint:'Farm gate 2024-25: grass $8–18, lucerne $14–26. Horse owners pay the top end.'},
+    {t:'money', id:'contract', label:'Contracting per bale (mow, ted, rake, bale)', def:7, prefix:'$', unit:'/bale', step:0.5},
+    {t:'money', id:'estab', label:'Establishment cost, annualised', def:0, prefix:'$', unit:'/ha/yr', step:25, hint:'Lucerne ≈ $1,400/ha over a 7-year stand ≈ $200/ha/yr. Grass: usually $0.'},
+    {t:'money', id:'other', label:'Other costs (fertiliser, weed control)', def:200, prefix:'$', unit:'/yr', step:50},
+    {t:'range', id:'hours', label:'Your hours per year (organising, selling, stacking)', def:20, min:0, max:120, step:5}
+  ],
+  compute(v){
+    const bales = v.ha * v.balesHa;
+    const gross = bales * v.price;
+    const costs = bales * v.contract + v.ha * v.estab + v.other;
+    const net = gross - costs;
+    let note = "";
+    if (v.price - v.contract < 3) note = "Margin per bale is thin — contracting eats most of the price. Selling direct to horse owners at the top of the range is where this works.";
+    else if (net < 0) note = "Losing money at these numbers — check the bale price against local listings.";
+    return { hero:net, unit:'/year', gross, costs, note, tiles:[
+      {label:'Bales per year', value:Math.round(bales).toLocaleString()},
+      {label:'Net per hectare', value: v.ha>0 ? fmt(net/v.ha) : '—'},
+      {label:'Per hour of your time', value: v.hours>0 ? fmt(net/v.hours) : '—'}
+    ]};
+  }
+},
+{
+  id:"wood", em:"🪵", name:"Firewood", short:"A managed woodlot, sold by the cubic metre",
+  desc:"Split, seasoned firewood has reliable winter demand. Low-tech, seasonal, and the margin is mostly your labour — so watch the per-hour number.",
+  fine:"Firewood must be sold by metric volume (m³ — cords aren't legal units in NZ), weight or description. Stacked ≈ ⅔ of thrown volume. Season 12+ months for repeat customers.",
+  fields:[
+    {t:'seg', id:'species', label:'Species', cols:'c4', opts:[{k:'pine',label:'Pine'},{k:'mac',label:'Macro- carpa'},{k:'gum',label:'Gum'},{k:'omp',label:'Old man pine'}],
+      link:{price:{pine:100,mac:115,gum:145,omp:145}}},
+    {t:'money', id:'m3', label:'Thrown m³ sold per year', def:30, unit:'m³', step:5, hint:'A mature tree ≈ 2–5 thrown m³.'},
+    {t:'money', id:'price', label:'Price per thrown m³, seasoned', def:100, prefix:'$', unit:'/m³', step:5, hint:'2025-26 retail: pine $65–120, macrocarpa $105–140, gum $130–180.'},
+    {t:'money', id:'process', label:'Chainsaw & processing per m³', def:8, prefix:'$', unit:'/m³', step:1, hint:'Fuel, oil, chains ≈ $4/m³ plus wear and tear.'},
+    {t:'money', id:'splitter', label:'Splitter hire per year', def:270, prefix:'$', unit:'/yr', step:45, hint:'≈ $90+GST/day; a few days covers 30 m³. Or buy: $1,800–3,500.'},
+    {t:'money', id:'delivery', label:'Delivery cost per m³', def:3, prefix:'$', unit:'/m³', step:1},
+    {t:'money', id:'other', label:'Other costs', def:100, prefix:'$', unit:'/yr', step:50},
+    {t:'range', id:'hours', label:'Your hours per year (felling, splitting, delivering)', def:60, min:0, max:300, step:5, hint:'≈ 2 hours per m³ is typical for one person with hired gear.'}
+  ],
+  compute(v){
+    const gross = v.m3 * v.price;
+    const costs = v.m3 * (v.process + v.delivery) + v.splitter + v.other;
+    const net = gross - costs;
+    let note = "";
+    if (net < 0) note = "Losing money at these numbers — firewood margins depend on scale; splitter hire is a fixed cost that needs enough m³ behind it.";
+    return { hero:net, unit:'/year', gross, costs, note, tiles:[
+      {label:'Gross income', value:fmt(gross)},
+      {label:'Net per m³', value: v.m3>0 ? fmt(net/v.m3) : '—'},
+      {label:'Per hour of your time', value: v.hours>0 ? fmt(net/v.hours) : '—'}
+    ]};
+  }
+}
+];
+
+/* ============ STATE & RENDERING ============ */
+const state = {};   // state[calcId] = { values:{}, segs:{} }
+CALCS.forEach(c => {
+  state[c.id] = { values:{}, segs:{} };
+  c.fields.forEach(f => {
+    if (f.t === 'seg') state[c.id].segs[f.id] = f.opts[0].k;
+    else state[c.id].values[f.id] = f.def;
+  });
+});
+
+const $ = id => document.getElementById(id);
+let current = null;
+
+function el(tag, cls, html){ const e = document.createElement(tag); if(cls) e.className = cls; if(html!==undefined) e.innerHTML = html; return e; }
+
+function renderHome(){
+  const grid = $("calcGrid");
+  grid.innerHTML = "";
+  CALCS.forEach(c => {
+    const card = el("button","calc-card");
+    card.append(el("span","em",c.em), el("span","nm",c.name), el("span","ds",c.short));
+    card.addEventListener("click", () => openCalc(c.id));
+    grid.append(card);
+  });
+}
+
+function openCalc(id){
+  current = CALCS.find(c => c.id === id);
+  $("home").classList.add("hidden");
+  $("calcPage").classList.remove("hidden");
+  document.body.classList.add("has-bar");
+  $("results").classList.remove("open");
+  $("sumBar").setAttribute("aria-expanded","false");
+  $("calcTitle").textContent = current.name + " calculator";
+  $("calcDesc").textContent = current.desc;
+  $("calcFine").textContent = current.fine + " Indicative estimates only — not financial advice.";
+  buildFields();
+  recalc();
+  window.scrollTo(0,0);
+}
+
+$("backBtn").addEventListener("click", () => {
+  $("calcPage").classList.add("hidden");
+  $("home").classList.remove("hidden");
+  document.body.classList.remove("has-bar");
+  current = null;
+  window.scrollTo(0,0);
+});
+
+$("sumBar").addEventListener("click", () => {
+  const open = $("results").classList.toggle("open");
+  $("sumBar").setAttribute("aria-expanded", open ? "true" : "false");
+});
+
+function buildFields(){
+  const host = $("calcFields");
+  host.innerHTML = "";
+  const card = el("div","card");
+  const s = state[current.id];
+
+  current.fields.forEach(f => {
+    const wrap = el("div","field");
+    if (f.t === 'seg'){
+      wrap.append(el("label",null,f.label));
+      const seg = el("div","seg " + (f.cols||'c2'));
+      seg.setAttribute("role","group");
+      f.opts.forEach(o => {
+        const b = el("button",null,o.label);
+        b.type = "button";
+        b.setAttribute("aria-pressed", s.segs[f.id] === o.k ? "true" : "false");
+        b.addEventListener("click", () => {
+          s.segs[f.id] = o.k;
+          seg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x===b ? "true":"false"));
+          if (f.link) Object.entries(f.link).forEach(([fid, map]) => {
+            if (map[o.k] !== undefined){
+              s.values[fid] = map[o.k];
+              const inp = document.getElementById("f_"+fid);
+              if (inp) inp.value = map[o.k];
+              const out = document.getElementById("out_"+fid);
+              if (out) out.textContent = map[o.k];
+            }
+          });
+          recalc();
+        });
+        seg.append(b);
+      });
+      wrap.append(seg);
+      if (f.hint) wrap.append(el("div","hint",f.hint));
+    }
+    else if (f.t === 'step'){
+      wrap.append(el("label",null,f.label));
+      const st = el("div","stepper");
+      const down = el("button",null,"−"); down.type="button";
+      const inp = document.createElement("input");
+      inp.type="number"; inp.id="f_"+f.id; inp.value=s.values[f.id];
+      inp.min=f.min; inp.max=f.max; inp.step=f.step; inp.inputMode="numeric";
+      const up = el("button",null,"+"); up.type="button";
+      down.addEventListener("click",()=>{ inp.value=Math.max(f.min,num(inp.value)-f.step); s.values[f.id]=num(inp.value); recalc(); });
+      up.addEventListener("click",()=>{ inp.value=Math.min(f.max,num(inp.value)+f.step); s.values[f.id]=num(inp.value); recalc(); });
+      inp.addEventListener("input",()=>{ s.values[f.id]=num(inp.value); recalc(); });
+      st.append(down,inp,up);
+      wrap.append(st);
+      if (f.hint) wrap.append(el("div","hint",f.hint));
+    }
+    else if (f.t === 'money'){
+      wrap.append(el("label",null,f.label));
+      const m = el("div","money" + (f.prefix ? "" : " noprefix"));
+      if (f.prefix) m.append(el("span","dollar",f.prefix));
+      const inp = document.createElement("input");
+      inp.type="number"; inp.id="f_"+f.id; inp.value=s.values[f.id];
+      inp.min=0; inp.step=f.step||1; inp.inputMode="decimal";
+      inp.addEventListener("input",()=>{ s.values[f.id]=num(inp.value); recalc(); });
+      m.append(inp);
+      if (f.unit) m.append(el("span","unit",f.unit));
+      wrap.append(m);
+      if (f.hint) wrap.append(el("div","hint",f.hint));
+    }
+    else if (f.t === 'range'){
+      wrap.append(el("label",null,f.label));
+      const st = el("div","stepper");
+      const down = el("button",null,"−"); down.type="button";
+      const inp = document.createElement("input");
+      inp.type="number"; inp.id="f_"+f.id; inp.value=s.values[f.id];
+      inp.min=f.min; inp.max=f.max; inp.step=f.step; inp.inputMode="decimal";
+      const up = el("button",null,"+"); up.type="button";
+      const clamp = x => Math.min(f.max, Math.max(f.min, x));
+      down.addEventListener("click",()=>{ inp.value=clamp(num(inp.value)-f.step); s.values[f.id]=num(inp.value); recalc(); });
+      up.addEventListener("click",()=>{ inp.value=clamp(num(inp.value)+f.step); s.values[f.id]=num(inp.value); recalc(); });
+      inp.addEventListener("input",()=>{ s.values[f.id]=num(inp.value); recalc(); });
+      st.append(down,inp,up);
+      wrap.append(st);
+      if (f.hint) wrap.append(el("div","hint",f.hint));
+    }
+    card.append(wrap);
+  });
+  host.append(card);
+}
+
+function recalc(){
+  if (!current) return;
+  const s = state[current.id];
+  const r = current.compute(s.values, s.segs);
+  $("heroLabel").textContent = r.heroLabel || "Estimated net income";
+  $("hero").innerHTML = fmt(r.hero) + " <small>" + r.unit + "</small>";
+  $("sumLabel").textContent = r.heroLabel || "Estimated net income";
+  $("sumValue").innerHTML = fmt(r.hero) + " <small>" + r.unit + "</small>";
+  $("sumWarn").classList.toggle("show", !!r.note);
+  const tiles = $("tiles");
+  tiles.innerHTML = "";
+  r.tiles.forEach(t => {
+    const tile = el("div","tile");
+    tile.append(el("div","t-label",t.label), el("div","t-value",t.value));
+    tiles.append(tile);
+  });
+  const total = Math.max(r.gross, 1);
+  const costPct = Math.min(100, Math.max(0, r.costs / total * 100));
+  $("barNet").style.width = Math.max(0, 100 - costPct) + "%";
+  $("barCost").style.width = costPct + "%";
+  const note = $("calcNote");
+  if (r.note){ note.textContent = r.note; note.classList.add("show"); }
+  else note.classList.remove("show");
+}
+
+/* ============ CENTRAL DEFAULTS ============ */
+/* Tries to fetch a small JSON file of season defaults. On success, updates
+   baked-in defaults and the stamp. On any failure, silently keeps built-ins. */
+(function loadCentralDefaults(){
+  const url = document.body.dataset.defaultsUrl;
+  if (!url) return;
+  fetch(url, {cache:"no-cache"}).then(r => r.ok ? r.json() : null).then(data => {
+    if (!data || !data.values) return;
+    Object.entries(data.values).forEach(([calcId, fields]) => {
+      const c = CALCS.find(x => x.id === calcId);
+      if (!c || !state[calcId]) return;
+      Object.entries(fields).forEach(([fid, val]) => {
+        const f = c.fields.find(x => x.id === fid);
+        if (!f) return;
+        if (typeof val === 'number'){
+          f.def = val;
+          state[calcId].values[fid] = val;   // update starting point (user edits after load still win)
+        } else if (f.t === 'seg' && f.link && typeof val === 'object'){
+          Object.entries(val).forEach(([lf, map]) => { if (f.link[lf]) Object.assign(f.link[lf], map); });
+        }
+      });
+    });
+    if (data.season) $("stamp").innerHTML = '<span class="dot"></span>Prices: ' + data.season + ' season — updated ' + (data.updated || '');
+    if (current){ buildFields(); recalc(); }
+  }).catch(()=>{ /* offline or not hosted yet — built-in defaults are fine */ });
+})();
+
+renderHome();
+</script>
+</body>
+</html>
